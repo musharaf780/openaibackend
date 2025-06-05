@@ -1,17 +1,16 @@
 const mongoose = require("mongoose");
 const UserSchema = new mongoose.Schema(
   {
-    chatId: {
+    userId: {
       type: String,
       require: true,
-      default: [],
     },
     context: {
       type: [],
       require: true,
     },
 
-    conversation: {
+    chat: {
       type: [],
       require: true,
       default: [],
@@ -22,4 +21,4 @@ const UserSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model("ChatSessions", UserSchema);
