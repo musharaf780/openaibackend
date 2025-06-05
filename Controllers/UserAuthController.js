@@ -1,5 +1,5 @@
 const UserModal = require("../Model/UserAuthModel");
-
+const jwt = require("jsonwebtoken");
 exports.userRegistration = async (req, res) => {
   try {
     const existingUser = await UserModal.findOne({
@@ -13,7 +13,15 @@ exports.userRegistration = async (req, res) => {
       });
     }
 
-    const { firstName, lastName, restaurantName, cellNo, address } = req.body;
+    const {
+      firstName,
+      lastName,
+      restaurantName,
+      cellNo,
+      address,
+      email,
+      password,
+    } = req.body;
 
     const _newUser = new UserModal({
       firstName,
@@ -21,6 +29,8 @@ exports.userRegistration = async (req, res) => {
       restaurantName,
       cellNo,
       address,
+      email,
+      password,
     });
 
     const savedUser = await _newUser.save();
@@ -39,61 +49,56 @@ exports.userRegistration = async (req, res) => {
   }
 };
 
-// exports.getAllCustomer = (req, res) => {
-//     CustomerModal.find({}, (error, customer) => {
-//         if (customer) {
-//             res.status(200).json({
-//                 status: "Success",
-//                 message: "Get All Board Successfully",
-//                 data: customer,
-//             })
-//         } else {
-//             res.status(400).json({
-//                 status: "Error",
-//                 message: "Something Went Wrong",
+exports.userSignIn = (req, res) => {
+  UserModal.findOne({ email: req.body.email }).exec((error, user) => {
+    if (error)
+      return res.status(400).json({
+        status: "error",
+        error: error,
+        message: "No user found",
+      });
 
-//             })
-//         }
-//     })
-// }
+    if (user) {
+      if (user.password === req.body.password) {
+        const token = jwt.sign(
+          { _id: user._id, role: user.role },
+          process.env.JWT_SECRET
+        );
+        const {
+          _id,
+          firstName,
+          lastName,
+          restaurantName,
+          cellNo,
+          address,
+          email,
+          password,
+        } = user;
 
-// exports.updateCustomerInfo = async (req, res) => {
-//     const customerId = req.body.id;
-//     const {
-//         firstName,
-//         lastName,
-//         bussinessName,
-//         address,
-//         maxLimit,
-//         number,
-
-//     } = req.body;
-
-//     CustomerModal.findOneAndUpdate(
-//         { _id: customerId },
-//         {
-//             firstName: firstName,
-//             lastName: lastName,
-//             bussinessName: bussinessName,
-//             address: address,
-//             maxLimit: maxLimit,
-//             number: number,
-
-//         },
-//         { new: true },
-//         (error, data) => {
-//             if (data) {
-//                 return res.status(200).json({
-//                     status: "Success",
-//                     data: data,
-//                 });
-//             } else {
-//                 return res.status(400).json({
-//                     status: 400,
-//                     message: "Something went wrong",
-//                 });
-//             }
-//         }
-//     );
-
-// };
+        res.status(200).json({
+          status: "Success",
+          token,
+          user: {
+            _id,
+            firstName,
+            lastName,
+            restaurantName,
+            cellNo,
+            address,
+            email,
+            password,
+          },
+        });
+      } else {
+        res.status(404).json({
+          message: "Invalid password",
+        });
+      }
+    } else {
+      res.status(404).json({
+        status: "Error",
+        message: "Something went wrong",
+      });
+    }
+  });
+};
