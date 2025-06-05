@@ -7,7 +7,6 @@ const openai = new OpenAI({
 
 exports.basicChat = async (req, res) => {
   const { userId, userMessage, _id } = req.body;
-  console.log();
 
   let context = [];
 
@@ -85,13 +84,6 @@ exports.basicChat = async (req, res) => {
         });
 
         const data = await existingConversation.save();
-        // const _newConversation = new ChatMode({
-        //   userId: userId,
-        //   context: context,
-        //   chat: chat,
-        // });
-
-        // const savedChat = await _newConversation.save();
         return res.status(201).json({
           status: "Success",
           message: "Chat Update successfully",
@@ -117,6 +109,4 @@ exports.basicChat = async (req, res) => {
       });
     }
   }
-
-  return;
 };
