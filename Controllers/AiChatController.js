@@ -53,11 +53,11 @@ The required format is:
 [
   {
     "categoryName": "Category Name",
-    "imageUrl": "Category Image URL",
+    "imageUrl": "Category Image URL (any open source url that show Category .png)",
     "menuItems": [
       {
         "name": "Dish Name",
-        "imageUrl": "Dish Image URL",
+         "imageUrl": "Dish Image URL (any open source url that show Dish .png)",
         "price": Dish Price (number only, no currency symbols),
         "description":"Dish short description in 150 words",
         "calories":"Dish average calories (number only)"
@@ -78,12 +78,14 @@ Instructions:
 - Make sure the response is exactly in this format [
   {
     "categoryName": "Category Name",
-    "imageUrl": "Category Image URL",
+    "imageUrl": "Category Image URL (any open source url that show Category .png)",
     "menuItems": [
       {
         "name": "Dish Name",
-        "imageUrl": "Dish Image URL",
+        "imageUrl": "Dish Image URL (any open source url that show Dish .png)",
         "price": Dish Price (number only, no currency symbols)
+          "description":"Dish short description in 150 words",
+        "calories":"Dish average calories (number only)"
       }
     ]
   }
