@@ -58,7 +58,9 @@ The required format is:
       {
         "name": "Dish Name",
         "imageUrl": "Dish Image URL",
-        "price": Dish Price (number only, no currency symbols)
+        "price": Dish Price (number only, no currency symbols),
+        "description":"Dish short description in 150 words",
+        "calories":"Dish average calories (number only)"
       }
     ]
   }
