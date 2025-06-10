@@ -12,6 +12,7 @@ app.use(express.json());
 const UserRoute = require("./Router/UserAuthRoute");
 const MenuRoute = require("./Router/MenuRoutes");
 const AiChat = require("./Router/AiChatRouter");
+const TranslateRoute = require("./Router/TranlsateRoutes");
 
 // Test API
 app.get("/", (req, res) => {
@@ -21,6 +22,7 @@ app.get("/", (req, res) => {
 app.use("/user/", UserRoute);
 app.use("/menu/", MenuRoute);
 app.use("/aiChat/", AiChat);
+app.use("/translate/", TranslateRoute);
 
 // Database Connection
 mongoose.set("strictQuery", false);
