@@ -75,6 +75,7 @@ Instructions:
 - Adapt food types to match the country or region if specified (e.g., halal in UAE).
 - Do NOT return anything except the JSON array.
 - The output MUST be valid JSON that can be parsed directly.
+- Check the context history, if user ask to generate more please generate some more.
 - Make sure the response is exactly in this format [
   {
     "categoryName": "Category Name",
@@ -152,5 +153,37 @@ Instructions:
       message: "Something went wrong",
       error: error.message || error,
     });
+  }
+};
+
+exports.getLatestChatByUserId = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID is required",
+      });
+    }
+
+    const latestChat = await ChatMode.findOne({ userId: userId }).sort({
+      createdAt: -1,
+    }); // Most recent first
+
+    if (!latestChat) {
+      return res.status(404).json({
+        success: false,
+        message: "No chat found for this user",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: latestChat,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Server Error", error });
   }
 };
