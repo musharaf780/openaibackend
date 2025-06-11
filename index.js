@@ -1,42 +1,112 @@
-const express = require("express");
-const dotenv = require("dotenv");
-const mongoose = require("mongoose");
-const cors = require("cors");
+require("dotenv").config();
+const { OpenAI } = require("openai");
+const { Pinecone } = require("@pinecone-database/pinecone");
 
-// Initialize Express
-const app = express();
-dotenv.config();
-app.use(cors());
-app.use(express.json());
+const openai = new OpenAI({ apiKey: process.env.OPEN_AI_KEY });
+const pinecone = new Pinecone({ apiKey: process.env.PINE_CONE_KEY });
+const indexName = "book-recommendation";
+const region = process.env.PINECONE_REGION;
 
-const UserRoute = require("./Router/UserAuthRoute");
-const MenuRoute = require("./Router/MenuRoutes");
-const AiChat = require("./Router/AiChatRouter");
-const TranslateRoute = require("./Router/TranlsateRoutes");
+async function createIndexIfNotExists() {
+  const list = await pinecone.listIndexes();
 
-// Test API
-app.get("/", (req, res) => {
-  res.send("API works fine.");
-});
+  const indexNames = Array.isArray(list)
+    ? list
+    : Array.isArray(list.indexes)
+    ? list.indexes.map((i) => (typeof i === "string" ? i : i.name))
+    : [];
 
-app.use("/user/", UserRoute);
-app.use("/menu/", MenuRoute);
-app.use("/aiChat/", AiChat);
-app.use("/translate/", TranslateRoute);
+  const exists = indexNames.includes(indexName);
 
-// Database Connection
-mongoose.set("strictQuery", false);
+  if (!exists) {
+    await pinecone.createIndex({
+      name: indexName,
+      dimension: 1536,
+      metric: "cosine",
+      spec: {
+        serverless: {
+          cloud: "aws", // or "gcp"
+          region: region,
+        },
+      },
+    });
+    console.log("✅ Index created:", indexName);
+  } else {
+    console.log("ℹ️ Index already exists:", indexName);
+  }
+}
+// Get embedding from OpenAI
+async function getEmbedding(text) {
+  const res = await openai.embeddings.create({
+    model: "text-embedding-3-small",
+    input: text,
+  });
+  return res.data[0].embedding;
+}
 
-const dbURI = `mongodb+srv://musharafahmed780:${process.env.MongoDBPassword}@cluster0.zpmq3cl.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
+async function upsertBooks(index) {
+  const books = [
+    {
+      id: "1",
+      title: "The Hobbit",
+      description: "A fantasy adventure in Middle-earth",
+    },
+    {
+      id: "2",
+      title: "1984",
+      description: "A dystopian novel about totalitarian regime",
+    },
+    {
+      id: "3",
+      title: "The Catcher in the Rye",
+      description: "A story of teenage angst and alienation",
+    },
+  ];
 
-console.log(dbURI);
-mongoose
-  .connect(dbURI)
-  .then(() => console.log("Database is connected"))
-  .catch((err) => console.error("Database connection error:", err));
+  const vectors = await Promise.all(
+    books.map(async (book) => {
+      const embedding = await getEmbedding(book.description);
+      return {
+        id: book.id,
+        values: embedding,
+        metadata: {
+          title: book.title,
+          description: book.description,
+        },
+      };
+    })
+  );
 
-// Start Server
-const PORT = process.env.PORT || 9000;
-app.listen(PORT, () => {
-  console.log(`Server is running on Port # ${PORT}`);
-});
+  await index.upsert(vectors);
+  console.log("📚 Book vectors upserted.");
+}
+
+// Recommend similar books
+async function recommendBooks(index, queryText) {
+  const embedding = await getEmbedding(queryText);
+  const result = await index.query({
+    vector: embedding,
+    topK: 3,
+    includeMetadata: true,
+  });
+
+  console.log("\n🔍 Recommended books:");
+  result.matches.forEach((match) => {
+    console.log(`- ${match.metadata.title} (Score: ${match.score.toFixed(2)})`);
+  });
+}
+
+// Main runner
+(async () => {
+  try {
+    await createIndexIfNotExists();
+
+    // Wait for index to be ready
+    const index = pinecone.Index(indexName);
+
+    // await upsertBooks(index); // Comment this after first run
+    await recommendBooks(index, "I want to read a story of Middle-earth.");
+  } catch (err) {
+    console.error(" Error:", err);
+  }
+})();
