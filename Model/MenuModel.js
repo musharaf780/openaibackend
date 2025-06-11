@@ -13,6 +13,13 @@ const menuItems = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  description: {
+    type: String,
+    required: true,
+  },
+  calories: {
+    type: Number,
+  },
 });
 
 const menu = new mongoose.Schema({
