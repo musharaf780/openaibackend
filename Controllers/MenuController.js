@@ -92,6 +92,23 @@ async function upsertBooks(index, menu) {
   console.log("📚 Book vectors upserted.");
 }
 
+async function recommendFood(queryText) {
+  const index = pinecone.Index(indexName);
+  const embedding = await getEmbedding(queryText);
+  const result = await index.query({
+    vector: embedding,
+    topK: 2,
+    includeMetadata: true,
+  });
+
+  console.log("\n🔍 Recommended Food:");
+  result.matches.forEach((match) => {
+    console.log(`- ${match.metadata.name} (Score: ${match.score.toFixed(2)})`);
+  });
+}
+
+recommendFood("Suggest salty food")
+
 exports.menuCreation = async (req, res) => {
   try {
     const { userid, menu } = req.body;
