@@ -50,20 +50,6 @@ async function getEmbedding(text) {
   return res.data[0].embedding;
 }
 
-function extractAllMenuItems(response) {
-  if (!response || !Array.isArray(response.menu)) {
-    return [];
-  }
-
-  const allItems = response.menu.flatMap((category) => {
-    return category.menuItems.map((item) => ({
-      ...item,
-      categoryName: category.categoryName, // Optional: include category info
-    }));
-  });
-
-  return allItems;
-}
 function flattenMenuItems(menu) {
   if (!Array.isArray(menu)) return [];
 
@@ -129,7 +115,7 @@ exports.foodRecomandation = async (req, res) => {
       const embedding = await getEmbedding(queryText);
       const result = await index.query({
         vector: embedding,
-        topK: 5,
+        topK: 2,
         includeMetadata: true,
       });
 
@@ -140,7 +126,7 @@ exports.foodRecomandation = async (req, res) => {
           foodList.push({
             id: data[key].id,
             score: data[key].score,
-            name: data[key].metadata,
+            data: data[key].metadata,
           });
         }
 
