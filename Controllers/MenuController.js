@@ -92,23 +92,6 @@ async function upsertBooks(index, menu) {
   console.log("📚 Book vectors upserted.");
 }
 
-async function recommendFood(queryText) {
-  const index = pinecone.Index(indexName);
-  const embedding = await getEmbedding(queryText);
-  const result = await index.query({
-    vector: embedding,
-    topK: 2,
-    includeMetadata: true,
-  });
-
-  console.log("\n🔍 Recommended Food:");
-  result.matches.forEach((match) => {
-    console.log(`- ${match.metadata.name} (Score: ${match.score.toFixed(2)})`);
-  });
-}
-
-recommendFood("Suggest salty food")
-
 exports.menuCreation = async (req, res) => {
   try {
     const { userid, menu } = req.body;
@@ -127,6 +110,56 @@ exports.menuCreation = async (req, res) => {
       message: "Menu created successfully",
       data: savedUser,
     });
+  } catch (error) {
+    console.error("❌ Error in menuCreation:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Something went wrong",
+      error: error.message || error,
+    });
+  }
+};
+
+exports.foodRecomandation = async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    async function recommendFood(queryText) {
+      const index = pinecone.Index(indexName);
+      const embedding = await getEmbedding(queryText);
+      const result = await index.query({
+        vector: embedding,
+        topK: 5,
+        includeMetadata: true,
+      });
+
+      let foodList = [];
+      if (result) {
+        const data = result.matches;
+        for (const key in data) {
+          foodList.push({
+            id: data[key].id,
+            score: data[key].score,
+            name: data[key].metadata,
+          });
+        }
+
+        return res.status(201).json({
+          status: "Success",
+          message: "Food fetch successfully",
+          food: foodList,
+        });
+      } else {
+        return res.status(400).json({
+          status: "error",
+          message: "Something went wrong",
+        });
+      }
+
+      console.log(result.matches);
+    }
+
+    recommendFood(query);
   } catch (error) {
     console.error("❌ Error in menuCreation:", error);
     return res.status(500).json({
